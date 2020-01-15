@@ -1,0 +1,29 @@
+
+-------- CONDA CUDA ENVIRONMENT ----------------------
+
+[open anaconda prompt]
+
+conda create --name pytorch_cuda
+activate pytorch_cuda
+
+conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
+
+[run script with print(torch.cuda.is_available()), verify that it returns true]
+
+conda install -c anaconda spyder
+conda install -c conda-forge matplotlib
+conda install -c anaconda scipy
+conda install scikit-learn
+
+conda update --all
+
+[latest versions of 2 packages contain bugs, reverting to working versions:]
+
+conda install jupyter_client=5.3.1
+conda install -c conda-forge matplotlib=3.1.0
+
+[pytorch not working, throwing assertion error, maybe update broke it, trying reinstall]
+
+conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
+
+pip install loss-landscapes
