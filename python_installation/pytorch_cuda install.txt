@@ -30,3 +30,10 @@ pip install loss-landscapes
 
 conda install pandas
 conda install seaborn
+
+----------------------------------
+note 28-2-2020:
+
+new install in new environment on TU PC did not work, jupyter client 5.3.4 made ipython kernel crash on spyder startup, but attempting to revert to 5.3.1 as before gave a list of incompatibilities
+
+however, doing the same thing on my home PC worked fine, no updates or older versions needed, just a single clean install and everything works
