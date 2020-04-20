@@ -1,0 +1,30 @@
+
+WORKING INSTALLATION:
+
+1) download miniconda
+2) install miniconda for local user only
+3) start miniconda prompt
+4) create an environment with "conda create --name [name]''
+5) go to the pytorch website and get the appropriate install command for your system, in case of no GPU this is:
+
+conda install pytorch torchvision cpuonly -c pytorch
+
+6) run the following commands:
+
+conda install -c anaconda spyder
+conda install -c conda-forge matplotlib
+conda install -c anaconda scipy
+conda install scikit-learn
+conda install pandas
+conda install seaborn
+
+pip install loss-landscapes
+
+
+7) if libMR functions are required (OpenMax), additionally run the following commands:
+
+pip install Cython
+pip install h5py
+pip install libmr *
+
+* works only when the appropriate Visual Studio components are installed
