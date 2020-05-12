@@ -131,6 +131,7 @@ def plot_confusion_matrix(cm, classes, normalize='none', cmap=plt.cm.Blues, perc
         cmnl = []
         for i in range(len(cm)):
             cmnl.append(cm[i] / float(sum(cm[i])))
+            # in case of no CUDA: if this returns an error, replace cm[i] by cm[i].float()
         cm = torch.stack(cmnl)
         if percentage:
             cm = 100*cm
@@ -143,6 +144,7 @@ def plot_confusion_matrix(cm, classes, normalize='none', cmap=plt.cm.Blues, perc
         cmnl = []
         for i in range(len(cm)):
             cmnl.append(cm[i] / float(sum(sum(cm))))
+            # in case of no CUDA: if this returns an error, replace cm[i] by cm[i].float()
         cm = torch.stack(cmnl)
         if percentage:
             cm = 100*cm
