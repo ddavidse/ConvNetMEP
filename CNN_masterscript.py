@@ -30,7 +30,10 @@ from scipy.special import softmax
 
 # %%  ----- CUDA initialization ------------------------------------------------------------------------------------------
 
-#torch.set_default_tensor_type('torch.cuda.FloatTensor')
+torch.set_default_tensor_type('torch.cuda.FloatTensor')
+
+# NOTE: I did not soft code CUDA, so if CUDA is not available, one needs to go through the script manually and disable it
+# (simply ctrl+F and comment out the lines with "cuda")
 
 # %%  ----- Delete old net -----------------------------------------------------------------------------------------------
 
@@ -39,25 +42,61 @@ if 'net' in locals():
 
 # %%  ----- Set Parameters and Folders -----------------------------------------------------------------------------------
 
-# Place where output folders are created:
-DT = r'C:\Users\Davy\Desktop'
+# Place where output folders are created (does not have to be desktop):
+DT = r'[enter path]'
 
 # Location of training data:
-#dirName = r'C:\Users\Davy\Desktop\datasets MEP\main dataset - 100x100'
-dirName = r'C:\Users\Davy\Desktop\datasets MEP\3 class set [improvised]'
+dirName = r'[enter path]'
 
-comparison_dataset_dir = r'C:\Users\Davy\Desktop\comparison_dataset_improved -- 100x100'
+# Location of fooling data:
+dataset_fool_dir = r'[enter path]'
+# NOTE: it can be advantageous to set this dir in the relevant code block below, so that one can re-execute only that
+#       code block with various fooling datasets
 
-BS = 15             # batch size
-epochs = 30         # number of epochs for training
+BS = 50             # batch size
+epochs = 12         # number of epochs for training
 fig_dpi = 150       # dpi for saved figures
 fig_font_size = 12  # font size for figures
 
-random_initialization = True        # set False to use saved_weights
+random_initialization = True        # set False to use saved_weights from saved_weights dir in the next line
 saved_weights = r'D:\ddavidse\Desktop\5 class network runs\network runs - background - full data\Network_run_16\initial_weights.pth'
 
-set_random_seed = False
+set_random_seed = False     # set True to use the seed value in the next line
 seed_value = 784410
+
+
+
+# %% ----- Configure dataset split ---------------------------------------------------------------------------------------
+
+ValFrac = 1/6       # set fraction of total dataset used for validation
+TestFrac = 1/6      # set fraction of total dataset used for testing
+
+# Note: look at the size of test and val sets in run_info.txt and adjust these settings if necessary
+
+
+# %% ----- Select features -----------------------------------------------------------------------------------------------
+
+confusion_flag = True
+batchnorm_flag = True                   # make True to use batch normalization
+misclassified_images_flag = False       # make True to output misclassified images
+misclassified_outputs_flag = False      # make True to output misclassified net output values to run info.txt
+loss_landscape_flag = False             # make True to create a loss landscape based on random planes
+PCA_flag = False                        # make True to create a loss landscape based on PCA
+MAV_flag = False                        # make True to output MAV stuff  
+baseline_flag = False                   # make True to output baseline stuff           
+
+# %% ----- Loss landscapes package settings (used if loss_landscape_flag is True) --------------------------------------------------
+
+STEPS = 40                              # resolution of random loss landscape, higher = more detail          
+
+# %% ----- PCA settings (used if PCA_flag is True) ---------------------------------------------------------------------------------
+
+FilterSteps = 40                        # resolution for PCA loss landscape
+filter_normalization_flag = True        # make True to use filter normalization for PCA loss landscape
+distance_multiplier = 2                 # distance multiplier for filter normalization, should be roughly between 1 and 5
+bowl = False                            # make True for alternative visualization of convex loss landscape
+contour_center = False                  # make True to output test plots with center and min of contour 
+
 
 # %% ----- Create output folder ------------------------------------------------------------------------------------------
     
@@ -80,38 +119,6 @@ while tv == 0:
     if not os.path.exists(fname):
         os.mkdir(fname)
         tv = 1
-
-# %% ----- Configure dataset split ---------------------------------------------------------------------------------------
-
-ValFrac = 1/6       # set fraction of total dataset used for validation
-TestFrac = 1/6      # set fraction of total dataset used for testing
-
-
-# %% ----- Select features -----------------------------------------------------------------------------------------------
-
-batchnorm_flag = False                   # make True to use batch normalization
-confusion_flag = True
-misclassified_images_flag = False       # make True to output misclassified images
-misclassified_outputs_flag = False      # make True to output misclassified net output values to run info.txt
-loss_landscape_flag = False             # make True to create a loss landscape based on random planes
-PCA_flag = False                        # make True to create a loss landscape based on PCA
-MAV_flag = False                        #   
-baseline_flag = False                    #      
-
-COMPARISON = False       
-save_testset = False  
-
-# %% ----- Loss landscapes package settings ------------------------------------------------------------------------------
-
-STEPS = 40      # resolution of landscape, higher = more detail          
-
-# %% ----- PCA settings --------------------------------------------------------------------------------------------------
-
-FilterSteps = 40
-filter_normalization_flag = True
-distance_multiplier = 2
-bowl = False
-contour_center = False
                 
 
 # %% ----- detecting number of images per class --------------------------------------------------------------------------
@@ -350,7 +357,7 @@ class BN_Net(nn.Module):
                                       nn.BatchNorm2d(5),
                                       nn.Conv2d(5,8,5,1,2),
                                       nn.MaxPool2d(2,2),
-                                      nn.ReLU(inplace=True),
+                                      nn.ReLU(inplace=True), 
                                       nn.BatchNorm2d(8)
                                          )
         
@@ -411,7 +418,7 @@ if batchnorm_flag:
 else:
     net = Net()
 
-#net.cuda()
+net.cuda()
 
 if random_initialization:
     net.apply(weights_init)
@@ -503,10 +510,10 @@ for e in range(epochs):
     print('validation loss: {:.4f}'.format(val_epoch_loss))
 
 
-#torch.cuda.synchronize()
+torch.cuda.synchronize()
 end = time.time()
 print('\n-----------------------------------------------------------------------')
-print('\nTime of training: {} s'.format(round((end - start),1)))
+print('\nTime of training: {:d} s'.format(round((end - start))))
 
 
 # %% ----- Prediction and training stats and graphs --------------------------------------------------------------------
@@ -734,7 +741,7 @@ if MAV_flag:
     thresh = 4.7
     
     #dataset_fool_dir = r'D:\ddavidse\Desktop\converted_elephants'
-    dataset_fool_dir = r'D:\ddavidse\Desktop\data_mirrored_100x100'
+    #dataset_fool_dir = r'D:\ddavidse\Desktop\data_mirrored_100x100'
     
     os.chdir(dataset_fool_dir)
 
@@ -1034,12 +1041,6 @@ if confusion_flag:
     misc_outputs_t = []
     maxdif_t = []
     
-    testimgcount = 0
-    
-    if save_testset:
-        os.chdir(fname)
-        os.mkdir('test images')
-        os.chdir('{}\{}'.format(fname,'test images'))
     
     for inputs, labels in test_loader:
         
@@ -1048,17 +1049,6 @@ if confusion_flag:
             
             labels = string_tensor(labels)
             all_labels = torch.cat((all_labels, labels),dim=0)
-            
-            if save_testset:
-                for i in range(len(inputs)):
-                    
-                    test_image = inputs[i]
-                    test_label = labels[i]
-                    testimgcount += 1
-                    testsavetag = '{}_test_image_{}.mat'.format(test_label, testimgcount)
-                    sub_image = test_image[0]
-                    test_array = sub_image.numpy()
-                    sio.savemat(testsavetag, {'img':test_array}, appendmat=False)
             
             outputs = net(inputs)
             all_preds = torch.cat((all_preds, outputs),dim=0)
@@ -1101,7 +1091,6 @@ if confusion_flag:
     
     ConfAcc = sum(TP3 == AL3).item()
     print('Amount of correct predictions in test 2: {}'.format(ConfAcc))
-    print('Confusion accuracy: {}%'.format(100*ConfAcc/total[0]))
     print('\n-----------------------------------------------------------------------')
     
     stacked = torch.stack((AL3, TP3), dim=1)
@@ -1130,7 +1119,7 @@ if confusion_flag:
     
     conf_fig_3 = plt.figure(figsize = conf_fig_size)
     plot_confusion_matrix(cmt2, names, normalize='full', percentage=True)
-
+    
 
 # %% ----- loss landscape ----------------------------------------------------------------------------------------------
 # source: https://github.com/marcellodebernardi/loss-landscapes/blob/master/examples/core-features.ipynb
@@ -1146,7 +1135,7 @@ if loss_landscape_flag:
     metric = loss_landscapes.metrics.Loss(criterion, x, y)
 
     LCP = loss_landscapes.random_plane(net, metric, 100, STEPS, normalization='filter', deepcopy_model=True)
-    #torch.cuda.synchronize()
+    torch.cuda.synchronize()
     end = time.time()
     print('\nTime of calculating loss landscape: {:d} s'.format(round((end - start))))
 
@@ -1273,7 +1262,7 @@ if PCA_flag:
             NetWeights = TrainedNetVector + NetAdd_1 + NetAdd_2
         
             net_updated = list_to_weights(NetWeights, net, True)  
-            #net_updated.cuda()
+            net_updated.cuda()
             
             val_running_loss = 0.0
             val_loader = batch_generator (BS, val_set)
@@ -1357,153 +1346,6 @@ if PCA_flag:
     PCA_time = PCA_time_end - PCA_time_start
     print('\nPCA time: {} s'.format(round(PCA_time,1)))
     
-    
-    
-    
-    
-    
-# %% comparison
-    
-if COMPARISON:
-    
-    dataset_fool_dir = comparison_dataset_dir
-    os.chdir(dataset_fool_dir)
-
-    DirListTop_fool = os.listdir()
-    names_fool = DirListTop_fool
-    
-    N_fool = []
-    
-    for x in names_fool:
-        
-        os.chdir(x)
-        DirListSub_fool = os.listdir()
-        N_fool.append(len(DirListSub_fool))
-        os.chdir(dataset_fool_dir)
-        
-    NC_fool = np.cumsum(N_fool)
-        
-    listOfFiles_fool = getListOfFiles(dataset_fool_dir)
-    listOfImages_fool = files_tensor(listOfFiles_fool)
-    
-    label_fool = np.zeros(sum(N_fool))
-    labels_fool = [x for x in range(len(names_fool))]
-    
-    for i in range(0,NC_fool[0]):
-        label_fool[i] = labels_fool[0]
-        
-    for k in range(1,len(N_fool)):
-        for i in range(NC_fool[k-1],NC_fool[k]):
-            label_fool[i] = labels_fool[k]
-     
-    dataset_fool = [listOfImages_fool, label_fool]
-    
-    
-    data_loader = batch_generator(BS, dataset_fool)
-    
-    dist_test = []
-    
-    with torch.no_grad():    
-        for data in data_loader:
-            images, labels = data
-            images = torch.stack(images)
-            images = torch.unsqueeze(images, 1)
-            outputs = net(images)
-            _, predicted = torch.max(outputs.data, 1)
-            
-            correct_index = predicted == string_tensor(labels).long() 
-    
-    
-    all_preds = torch.tensor([])
-    all_labels = torch.tensor([])
-    
-    misc_preds_t = []
-    misc_labels_t = []
-    misc_img_t = []
-    misc_outputs_t = []
-    maxdif_t = []
-    
-    comparison_batches = 0
-    
-    data_loader = batch_generator(BS, dataset_fool)
-    
-    for inputs, labels in data_loader:
-        
-        inputs = torch.stack(inputs)
-        inputs = torch.unsqueeze(inputs, 1)
-        
-        labels = string_tensor(labels)
-        all_labels = torch.cat((all_labels, labels),dim=0)
-        
-        outputs = net(inputs)
-        all_preds = torch.cat((all_preds, outputs),dim=0)
-        
-        imlist = list(inputs)
-        outputs1 = outputs.argmax(dim=1)
-        vec_equal = outputs1 == labels
-        
-        comparison_batches += 1
-            
-
-           
-    AL = all_labels
-    AL2 = np.array(list(AL), dtype=np.int)
-    AL3 = torch.tensor(AL2)
-    
-    TP = all_preds.argmax(dim=1)
-    TP2 = np.array(list(TP), dtype=np.int)
-    TP3 = torch.tensor(TP2)
-    
-    ConfAcc = round(100*sum(TP3 == AL3).item() / len(TP3) , 1)
-    
-    print('\n-----------------------------------------------------------------------')
-    print('\nAccuracy on the comparison set: {}'.format(ConfAcc))
-    print('\nResult obtained with {} images coming from {} batches'.format(comparison_batches*BS, comparison_batches))
-    print('\n-----------------------------------------------------------------------')
-    
-    os.chdir(fname)
-    
-    f = open('test result.txt', 'w+')
-    f.write('\n-----------------------------------------------------------------------')
-    f.write('\n\nAccuracy on the comparison set: {}'.format(ConfAcc))
-    f.write('\n\nResult obtained with {} images coming from {} batches'.format(comparison_batches*BS, comparison_batches))
-    f.write('\n-----------------------------------------------------------------------')
-    f.close()
-    
-    stacked = torch.stack((AL3, TP3), dim=1)
-    
-    cmt = torch.zeros(len(N),len(N), dtype=torch.int64)
-    
-    
-    for p in stacked:
-        tl, pl = p.tolist()
-        cmt[tl, pl] = cmt[tl, pl] + 1
-        
-    cmt2 = cmt.cpu()
-    
-    if len(names) == 3:
-        conf_fig_size = (8,8)
-    elif len(names) == 4:
-        conf_fig_size = (9,9)
-    else:
-        conf_fig_size = (10,10)
-    
-    conf_fig = plt.figure(figsize = conf_fig_size)
-    plot_confusion_matrix(cmt2, names)
-    
-    conf_fig_2 = plt.figure(figsize = conf_fig_size)
-    plot_confusion_matrix(cmt2, names, normalize='row', percentage=True)
-    
-    conf_fig_3 = plt.figure(figsize = conf_fig_size)
-    plot_confusion_matrix(cmt2, names, normalize='full', percentage=True)
-    
-
-# %%
-    
-
-    
-
-    
         
 # %% ----- Saving results -----------------------------------------------------------------------------------------------
 
@@ -1565,9 +1407,6 @@ f.write('\n\nAccuracy of the network on the test images: {:.1f} %'.format((100 *
 f.write('\nTest result obtained from {} images coming from {} batches'.format(total[0], testsize[0]))
 f.write('\n\nAccuracy of the network on the total set of all images: {:.1f} %'.format((100 * correct_tot / total_tot)))
 f.write('\nTest result obtained from {} images coming from {} batches'.format(total_tot, testsize_tot))
-
-if confusion_flag:
-    f.write('\nConfusion accuracy: {}%'.format(100*ConfAcc/total[0]))
 
 if MAV_flag:
     f.write('\n\nAmount of images in high confidence set: {}'.format(ImagesChecked))
