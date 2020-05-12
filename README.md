@@ -10,3 +10,5 @@ To use the code:
 5. Run the script
 
 For a basic test, make confusion_flag = True and batchnorm_flag = True while leaving the rest as False
+
+PCA - trajectory.py is a seperate version of CNN_masterscript that was used for plotting trajectories on loss contour plots that were obtained with PCA
