@@ -1,5 +1,7 @@
 # ConvNet
-convolutional neural network code 
+This repository contains Convolutional Neural Network code used for the master thesis project "Application of Deep Learning to Coherent Fourier Scatterometry data"
+
+----------------------------------------------------------------------------------------------------------------------------------
 
 To use the code:
 
@@ -11,4 +13,10 @@ To use the code:
 
 For a basic test, make confusion_flag = True and batchnorm_flag = True while leaving the rest as False
 
+----------------------------------------------------------------------------------------------------------------------------------
+
 PCA - trajectory.py is a seperate version of CNN_masterscript that was used for plotting trajectories on loss contour plots that were obtained with PCA
+
+----------------------------------------------------------------------------------------------------------------------------------
+
+The directory OpenMax_code contains the code used on a separate PC (and thus, a separate python installation) for OpenMax calculations
