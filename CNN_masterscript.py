@@ -76,7 +76,7 @@ TestFrac = 1/6      # set fraction of total dataset used for testing
 
 # %% ----- Select features -----------------------------------------------------------------------------------------------
 
-confusion_flag = True
+confusion_flag = True                   # make True to output confusion matrices
 batchnorm_flag = True                   # make True to use batch normalization
 misclassified_images_flag = False       # make True to output misclassified images
 misclassified_outputs_flag = False      # make True to output misclassified net output values to run info.txt
